@@ -1,25 +1,26 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from interfaces.msg import Edge, Movement
+from interfaces.msg import Movement
 from cv_bridge import CvBridge
 import cv2
+
 
 class EdgeFollower(Node):
 
     def __init__(self):
         super().__init__('edge_follower')
-        self.edge_subscription = self.create_subscription(
-                Edge,
-                'cmd_edge',
-                self.edge_callback,
-                10)
-        self.movement_publisher = self.create_publisher(Movement, 'cmd_move', 10)
+        self.movement_publisher = self.create_publisher(Movement, 'cmd_vel', 10)
         self.bridge = CvBridge()
+        self.subscription = self.create_subscription(
+            Image,
+            'video_frames',
+            self.edge_callback,
+            10)
 
     def edge_callback(self, msg):
         try:
-            cv_image = self.bridge.imgmsg_to_cv2(msg.image, "bgr8")
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
             print(e)
 
@@ -28,7 +29,7 @@ class EdgeFollower(Node):
         edges = cv2.Canny(gray, 100, 200)
 
         # Determine the center of the image
-        height, width, _ = cv_image.shape
+        height, width = edges.shape
         center = int(width / 2)
 
         # Find the edge pixels
