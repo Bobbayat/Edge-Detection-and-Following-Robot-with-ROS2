@@ -4,7 +4,7 @@ from sensor_msgs.msg import Image
 
 from cv_bridge import CvBridge
 import cv2
-from aisd_interfaces.msg import Edge
+from interfaces.msg import Edge
 
 
 class EdgeDetector(Node):
