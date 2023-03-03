@@ -17,6 +17,7 @@ class Move(Node):
             'video_frames',
             self.edge_callback,
             10)
+        self.subscription  # prevent the subscription from being garbage collected
 
     def edge_callback(self, msg):
         try:
@@ -27,6 +28,8 @@ class Move(Node):
             # Convert the image to grayscale and apply Canny edge detection
             gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
             edges = cv2.Canny(gray, 100, 200)
+            cv2.imshow("Edges", edges)
+            cv2.waitKey(1)
 
             # Determine the center of the image
             height, width = edges.shape
@@ -42,10 +45,10 @@ class Move(Node):
             # If no edge pixels are found, stop moving
             if len(edge_pixels) == 0:
                 msg = Twist()
-                msg.direction = "stop"
+                msg.linear.x = 0.0
+                msg.angular.z = 0.0
                 self.vel_publisher.publish(msg)
         
-
             # Find the x-coordinate of the closest edge pixel to the center of the image
             closest_pixel = min(edge_pixels, key=lambda p: abs(p[0] - center))
             closest_x = closest_pixel[0]
@@ -53,15 +56,18 @@ class Move(Node):
             # Determine the direction to move based on the x-coordinate of the closest edge pixel
             if closest_x < center - 50:
                 msg = Twist()
-                msg.direction = "left"
+                msg.linear.x = 0.0
+                msg.angular.z = 0.5
                 self.vel_publisher.publish(msg)
             elif closest_x > center + 50:
                 msg = Twist()
-                msg.direction = "right"
+                msg.linear.x = 0.0
+                msg.angular.z = -0.5
                 self.vel_publisher.publish(msg)
             else:
                 msg = Twist()
-                msg.direction = "forward"
+                msg.linear.x = 0.2
+                msg.angular.z = 0.0
                 self.vel_publisher.publish(msg)
 
 
@@ -75,6 +81,9 @@ def main(args=None):
     move.destroy_node()
     rclpy.shutdown()
 
+    cv2.destroyAllWindows()  # close all windows
+
 
 if __name__ == '__main__':
     main()
+
