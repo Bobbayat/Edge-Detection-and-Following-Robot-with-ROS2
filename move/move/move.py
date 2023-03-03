@@ -50,11 +50,12 @@ class Move(Node):
                         edge_pixels.append((j, i))
 
            # If no edge pixels are found, stop moving
-            if len(edge_pixels) == 0:
-                msg = Twist()
-                msg.linear.x = 0.0
-                msg.angular.z = 0.0
-                self.vel_publisher.publish(msg)
+            #if len(edge_pixels) == 0:
+             #   msg = Twist()
+              #  msg.linear.x = 0.0
+               # msg.angular.z = 0.0
+                #self.vel_publisher.publish(msg)
+                return
         
              # Find the x-coordinate of the closest edge pixel to the center of the image
             closest_pixel = min(edge_pixels, key=lambda p: abs(p[0] - center))
@@ -64,16 +65,16 @@ class Move(Node):
             if closest_x < center - 50:
                 msg = Twist()
                 msg.linear.x = 0.0
-                msg.angular.z = 0.5
+                msg.angular.z = 1.0
                 self.vel_publisher.publish(msg)
             elif closest_x > center + 50:
                 msg = Twist()
                 msg.linear.x = 0.0
-                msg.angular.z = -0.5
+                msg.angular.z = -1.0
                 self.vel_publisher.publish(msg)
             else:
                 msg = Twist()
-                msg.linear.x = 0.2
+                msg.linear.x = 1.0
                 msg.angular.z = 0.0
                 self.vel_publisher.publish(msg)
 
