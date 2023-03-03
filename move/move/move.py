@@ -22,11 +22,12 @@ class Move(Node):
     def edge_callback(self, msg):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
         except CvBridgeError as e:
             print(e)
         else:
             # Convert the image to grayscale and apply Canny edge detection
-            gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
             edges = cv2.Canny(gray, 100, 200)
             cv2.imshow("Edges", edges)
             cv2.waitKey(1)
