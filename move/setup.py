@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'edge_follower = move.edge_follower:main'
+            'edge_follower = move.edge_follower:main',
         ],
     },
 )
