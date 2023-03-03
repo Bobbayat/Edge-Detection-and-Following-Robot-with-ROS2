@@ -1,15 +1,15 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from interfaces.msg import Twist
+from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge
 import cv2
 
 
-class EdgeFollower(Node):
+class Move(Node):
 
     def __init__(self):
-        super().__init__('edge_follower')
+        super().__init__('move')
         self.vel_publisher = self.create_publisher(Twist, 'cmd_vel', 10)
         self.bridge = CvBridge()
         self.subscription = self.create_subscription(
@@ -68,11 +68,11 @@ class EdgeFollower(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    edge_follower = EdgeFollower()
+    move = Move()
 
-    rclpy.spin(edge_follower)
+    rclpy.spin(move)
 
-    edge_follower.destroy_node()
+    move.destroy_node()
     rclpy.shutdown()
 
 
