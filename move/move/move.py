@@ -17,17 +17,19 @@ class Move(Node):
             'video_frames',
             self.edge_callback,
             10)
-        
+        self.subscription  # prevent the subscription from being garbage collected
 
     def edge_callback(self, msg):
         try:
-            cv_image = self.bridge.imgmsg_to_cv2(msg, "rgb8")
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
             print(e)
         else:
             # Convert the image to grayscale and apply Canny edge detection
-            gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
+            gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
             edges = cv2.Canny(gray, 100, 200)
+            cv2.imshow("Edges", edges)
+            cv2.waitKey(1)
 
             # Determine the center of the image
             height, width = edges.shape
@@ -47,7 +49,6 @@ class Move(Node):
                 msg.angular.z = 0.0
                 self.vel_publisher.publish(msg)
         
-
             # Find the x-coordinate of the closest edge pixel to the center of the image
             closest_pixel = min(edge_pixels, key=lambda p: abs(p[0] - center))
             closest_x = closest_pixel[0]
@@ -80,6 +81,9 @@ def main(args=None):
     move.destroy_node()
     rclpy.shutdown()
 
+    cv2.destroyAllWindows()  # close all windows
+
 
 if __name__ == '__main__':
     main()
+
