@@ -23,9 +23,10 @@ class Move(Node):
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError as e:
             print(e)
-
-        # Convert the image to grayscale and apply Canny edge detection
-        gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+        else:
+            # Convert the image to grayscale and apply Canny edge detection
+            gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+        
         edges = cv2.Canny(gray, 100, 200)
 
         # Determine the center of the image
@@ -44,7 +45,7 @@ class Move(Node):
             msg = Twist()
             msg.direction = "stop"
             self.vel_publisher.publish(msg)
-            return
+        
 
         # Find the x-coordinate of the closest edge pixel to the center of the image
         closest_pixel = min(edge_pixels, key=lambda p: abs(p[0] - center))
