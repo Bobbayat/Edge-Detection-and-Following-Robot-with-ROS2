@@ -19,9 +19,15 @@ class Move(Node):
             10)
         self.subscription  # prevent the subscription from being garbage collected
 
+
     def edge_callback(self, msg):
         try:
-            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            # Check the image format
+            if msg.encoding != 'bgr8':
+                self.get_logger().warn('Unsupported encoding format: %s' % msg.encoding)
+                return
+        
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
             cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
         except CvBridgeError as e:
             print(e)
@@ -43,18 +49,18 @@ class Move(Node):
                     if edges[i, j] == 255:
                         edge_pixels.append((j, i))
 
-            # If no edge pixels are found, stop moving
+           # If no edge pixels are found, stop moving
             if len(edge_pixels) == 0:
                 msg = Twist()
                 msg.linear.x = 0.0
                 msg.angular.z = 0.0
                 self.vel_publisher.publish(msg)
         
-            # Find the x-coordinate of the closest edge pixel to the center of the image
+             # Find the x-coordinate of the closest edge pixel to the center of the image
             closest_pixel = min(edge_pixels, key=lambda p: abs(p[0] - center))
             closest_x = closest_pixel[0]
 
-            # Determine the direction to move based on the x-coordinate of the closest edge pixel
+             # Determine the direction to move based on the x-coordinate of the closest edge pixel
             if closest_x < center - 50:
                 msg = Twist()
                 msg.linear.x = 0.0
@@ -70,6 +76,7 @@ class Move(Node):
                 msg.linear.x = 0.2
                 msg.angular.z = 0.0
                 self.vel_publisher.publish(msg)
+
 
 
 def main(args=None):
