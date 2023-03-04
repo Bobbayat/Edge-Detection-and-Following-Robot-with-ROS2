@@ -10,7 +10,7 @@ class EdgeDetection(Node):
     def __init__(self):
         super().__init__('edge_detection')
         self.publisher_ = self.create_publisher(Image, 'edges', 10)
-        self.timer_ = self.create_timer(0.1, self.detect_edges)
+        self.timer_ = self.create_timer(0.01, self.detect_edges)
         self.bridge = CvBridge()
 
     def detect_edges(self):

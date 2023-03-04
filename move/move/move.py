@@ -52,8 +52,8 @@ class Move(Node):
         error = image_center_x - cx
 
         # Calculate the linear and angular velocity commands based on the error
-        linear_vel = 0.1
-        angular_vel = -0.001 * error
+        linear_vel = 0.2
+        angular_vel = -0.002 * error
 
         # Publish the velocity commands
         twist = Twist()
