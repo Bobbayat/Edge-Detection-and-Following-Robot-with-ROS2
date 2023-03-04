@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'image_publisher = vision.image_publisher:main',
+            'edge_detection = vision.edge_detection:main',
             ],
     },
 )

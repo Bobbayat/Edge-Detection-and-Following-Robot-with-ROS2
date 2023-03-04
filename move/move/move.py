@@ -1,96 +1,76 @@
+import cv2
+import numpy as np
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
-from cv_bridge import CvBridge, CvBridgeError
-import cv2
+from cv_bridge import CvBridge
 
 
 class Move(Node):
-
     def __init__(self):
         super().__init__('move')
-        self.vel_publisher = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.bridge = CvBridge()
-        self.subscription = self.create_subscription(
+        self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
+        self.subscription_ = self.create_subscription(
             Image,
-            'video_frames',
-            self.edge_callback,
+            'edges',
+            self.follow_edge,
             10)
-        self.subscription  # prevent the subscription from being garbage collected
+        self.bridge = CvBridge()
 
+    def follow_edge(self, msg):
+        # Convert the ROS message to an OpenCV image
+        edges = self.bridge.imgmsg_to_cv2(msg, desired_encoding="passthrough")
 
-    def edge_callback(self, msg):
-        try:
-            # Check the image format
-            if msg.encoding != 'bgr8':
-                self.get_logger().warn('Unsupported encoding format: %s' % msg.encoding)
-                return
-        
-            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
-            cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-        except CvBridgeError as e:
-            print(e)
-        else:
-            # Convert the image to grayscale and apply Canny edge detection
-            gray = cv2.cvtColor(cv_image, cv2.COLOR_RGB2GRAY)
-            edges = cv2.Canny(gray, 100, 200)
-            cv2.imshow("Edges", edges)
-            cv2.waitKey(1)
+        # Convert the edges image to a binary mask
+        thresh = cv2.threshold(edges, 128, 255, cv2.THRESH_BINARY)[1]
 
-            # Determine the center of the image
-            height, width = edges.shape
-            center = int(width / 2)
+        # Find the contours of the edges
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # Find the edge pixels
-            edge_pixels = []
-            for i in range(height):
-                for j in range(width):
-                    if edges[i, j] == 255:
-                        edge_pixels.append((j, i))
+        # If no contours are found, stop moving
+        if len(contours) == 0:
+            twist = Twist()
+            self.publisher_.publish(twist)
+            return
 
-            #If no edge pixels are found, stop moving
-            if len(edge_pixels) == 0:
-                msg = Twist()
-                msg.linear.x = 0.0
-                msg.angular.z = 0.0
-                self.vel_publisher.publish(msg)
-                return
-        
-             # Find the x-coordinate of the closest edge pixel to the center of the image
-            closest_pixel = min(edge_pixels, key=lambda p: abs(p[0] - center))
-            closest_x = closest_pixel[0]
+        # Choose the largest contour as the edge to follow
+        largest_contour = max(contours, key=cv2.contourArea)
 
-             # Determine the direction to move based on the x-coordinate of the closest edge pixel
-            if closest_x < center - 50:
-                msg = Twist()
-                msg.linear.x = 0.0
-                msg.angular.z = 1.0
-                self.vel_publisher.publish(msg)
-            elif closest_x > center + 50:
-                msg = Twist()
-                msg.linear.x = 0.0
-                msg.angular.z = -1.0
-                self.vel_publisher.publish(msg)
-            else:
-                msg = Twist()
-                msg.linear.x = 2.0
-                msg.angular.z = 0.0
-                self.vel_publisher.publish(msg)
+        # Get the centroid of the largest contour
+        moments = cv2.moments(largest_contour)
+        # If the area of the contour is zero, stop moving
+        if moments['m00'] == 0:
+            twist = Twist()
+            self.publisher_.publish(twist)
+            return
+        cx = int(moments['m10'] / moments['m00'])
+        cy = int(moments['m01'] / moments['m00'])
 
+        # Calculate the error between the centroid and the center of the image
+        image_center_x = int(edges.shape[1] / 2)
+        error = image_center_x - cx
+
+        # Calculate the linear and angular velocity commands based on the error
+        linear_vel = 0.1
+        angular_vel = -0.001 * error
+
+        # Publish the velocity commands
+        twist = Twist()
+        twist.linear.x = linear_vel
+        twist.angular.z = angular_vel
+        self.publisher_.publish(twist)
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    move = Move()
+    node = Move()
 
-    rclpy.spin(move)
+    rclpy.spin(node)
 
-    move.destroy_node()
+    node.destroy_node()
     rclpy.shutdown()
-
-    cv2.destroyAllWindows()  # close all windows
 
 
 if __name__ == '__main__':
