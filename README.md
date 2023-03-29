@@ -1,4 +1,4 @@
-# Create3-iRobot
+# Edge Detection and Following Robot with ROS2 (Create3-iRobot)
 Developed two ROS2 nodes using Python that work together to detect edges from a camera
 feed and navigate a robot along the detected edges. The Edge Detection node captures
 an input image from the camera, applies color thresholding, and performs Canny
